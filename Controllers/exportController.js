@@ -1,5 +1,5 @@
 const { Parser } = require("json2csv");
-const { getAllProducts } = require("../models/exportModel");
+const { getAllProducts } = require("../Models/exportModel");
 
 const exportProductsToCSV = async (req, res) => {
   try {
