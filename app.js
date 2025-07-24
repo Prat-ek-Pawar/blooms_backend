@@ -26,6 +26,7 @@ const {
 } = require("./Middlewares/authMiddleware");
 
 // Import routes
+const customerRoutes = require("./Routes/customerRoutes");
 const featuredRoutes = require("./Routes/featuredRotes");
 const categoriesRoutes = require("./Routes/categoriesRoutes");
 const productsRoutes = require("./Routes/productsRoutes");
@@ -41,6 +42,7 @@ app.use("/api/featured", protectWriteOperations, featuredRoutes);
 app.use("/api/categories", protectWriteOperations, categoriesRoutes);
 app.use("/api/products", protectWriteOperations, productsRoutes);
 app.use("/api/export", exportRoutes);
+app.use("/api/customers", customerRoutes);
 // Basic route for testing
 app.get("/", (req, res) => {
   res.json({
