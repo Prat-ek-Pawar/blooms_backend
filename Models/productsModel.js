@@ -13,6 +13,31 @@ class ProductsModel {
     }
   }
 
+  static async getFilteredProducts(searchQuery, categories) {
+    let baseQuery = `SELECT * FROM products WHERE 1=1`;
+    const values = [];
+
+    // 🔍 Search by product_name
+    if (searchQuery) {
+      values.push(`%${searchQuery}%`);
+      baseQuery += ` AND product_name ILIKE $${values.length}`;
+    }
+
+    // 🧃 Filter by categories
+    if (categories && categories.length > 0) {
+      const placeholders = categories.map(
+        (_, i) => `$${values.length + i + 1}`
+      );
+      baseQuery += ` AND category IN (${placeholders.join(",")})`;
+      values.push(...categories);
+    }
+
+    baseQuery += ` ORDER BY created DESC`;
+
+    const result = await pool.query(baseQuery, values);
+    return result.rows;
+  }
+
   // Get available products only (available = true)
   static async getAvailableProducts() {
     try {

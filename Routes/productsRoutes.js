@@ -1,7 +1,6 @@
 // routes/productsRoutes.js
 const express = require("express");
 const ProductsController = require("../Controllers/productsController");
-
 const router = express.Router();
 
 // GET Routes - Order matters! More specific routes should come first
@@ -10,8 +9,8 @@ router.get("/in-stock", ProductsController.getInStockProducts); // Get products 
 router.get("/out-of-stock", ProductsController.getOutOfStockProducts); // Get products with stock = 0
 router.get("/featured", ProductsController.getFeaturedProducts); // Get featured products (high rating)
 router.get("/low-stock", ProductsController.getLowStockProducts); // Get low stock products
-router.get("/search/:searchTerm", ProductsController.searchProducts); // Search products by name
-router.get("/category/:category", ProductsController.getProductsByCategory); // Get products by category
+//router.get("/search/:searchTerm", ProductsController.searchProducts); // Search products by name
+//router.get("/category/:category", ProductsController.getProductsByCategory); // Get products by category
 router.get(
   "/price/:minPrice/:maxPrice",
   ProductsController.getProductsByPriceRange
@@ -19,7 +18,7 @@ router.get(
 router.get("/rating/:minRating", ProductsController.getProductsByRating); // Get products by minimum rating
 router.get("/:id", ProductsController.getProductById); // Get product by ID
 router.get("/", ProductsController.getAllProducts); // Get all products (with optional pagination & filters)
-
+router.get("/api/products/search", ProductsController.handleProductSearch);
 // POST Routes
 router.post("/", ProductsController.createProduct); // Create new product
 

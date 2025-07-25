@@ -32,16 +32,18 @@ const categoriesRoutes = require("./Routes/categoriesRoutes");
 const productsRoutes = require("./Routes/productsRoutes");
 const adminRoutes = require("./Routes/adminRoutes");
 const exportRoutes = require("./Routes/exportRoutes");
-
+const uploadRoutes = require("./Routes/uploadRoutes");
 // Apply global middleware
 app.use(logAuthAttempts); // Log authentication attempts
 
+
 // Use routes
-app.use("/api/admin", adminRoutes);
-app.use("/api/featured", protectWriteOperations, featuredRoutes);
+app.use("/api/admin",adminRoutes);
+app.use("/api/upload",protectWriteOperations, uploadRoutes);
+app.use("/api/featured",protectWriteOperations, featuredRoutes);
 app.use("/api/categories", protectWriteOperations, categoriesRoutes);
-app.use("/api/products", protectWriteOperations, productsRoutes);
-app.use("/api/export", exportRoutes);
+app.use("/api/products",protectWriteOperations, productsRoutes);
+app.use("/api/export",protectWriteOperations,exportRoutes);
 app.use("/api/customers", customerRoutes);
 // Basic route for testing
 app.get("/", (req, res) => {

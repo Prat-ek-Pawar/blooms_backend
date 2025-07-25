@@ -598,3 +598,181 @@ If you encounter issues:
 3. Ensure the server is running on the correct port
 4. Check console logs for detailed error messages
 5. Verify JWT secret is consistent across requests
+
+# 🧾 Customers API — Routes Documentation
+
+**Base URL Prefix**:
+```
+/api/customers
+```
+
+---
+
+## 🔐 Authentication
+
+- All routes **except** `POST /api/customers` are protected with `authMiddleware` (admin only).
+- Send JWT token in header:
+
+```
+Authorization: Bearer <token>
+```
+
+---
+
+## 📥 1. `POST /api/customers`
+
+### ➕ Create a new customer order
+
+| Field              | Type     | Required | Description                |
+|-------------------|----------|----------|----------------------------|
+| `name`            | string   | ✅        | Customer full name         |
+| `email`           | string   | ❌        | Email address              |
+| `mobile`          | string   | ✅        | Mobile number              |
+| `product_name`    | string   | ✅        | Name of ordered product    |
+| `quantity`        | string   | ❌        | Quantity (e.g., "2 pcs")   |
+| `delivery_address`| string   | ✅        | Full delivery address      |
+
+### 🧪 Example Request Body
+```json
+{
+  "name": "Aman Sharma",
+  "email": "aman@gmail.com",
+  "mobile": "9876543210",
+  "product_name": "Rose Bush - Red",
+  "quantity": "2",
+  "delivery_address": "123, Green Lane, Delhi"
+}
+```
+
+### ✅ Success Response
+```json
+{
+  "message": "Customer data saved successfully!"
+}
+```
+
+---
+
+## 📤 2. `GET /api/customers`
+
+### 🔎 Get all customers (Admin only)
+
+- Returns all customer records from the database.
+
+### ✅ Example Response
+```json
+[
+  {
+    "id": 1,
+    "name": "Aman Sharma",
+    "email": "aman@gmail.com",
+    "product_name": "Rose Bush - Red",
+    "quantity": "2",
+    "delivery_address": "123, Green Lane, Delhi",
+    "created": "2024-01-01T00:00:00Z",
+    "updated": "2024-01-01T00:00:00Z"
+  }
+]
+```
+
+---
+
+## 🗑️ 3. `DELETE /api/customers/:id`
+
+### ❌ Delete a customer record (Admin only)
+
+- Deletes customer entry by `ID`.
+
+### 📌 Example
+```
+DELETE /api/customers/5
+```
+
+### ✅ Success Response
+```json
+{
+  "message": "Customer deleted successfully"
+}
+```
+
+---
+
+## 🛠️ 4. `PATCH /api/customers/:id`
+
+### ✏️ Update customer details (Admin only)
+
+- Send only the fields you want to update.
+
+### 📌 Example
+```
+PATCH /api/customers/3
+```
+
+### 🧪 Request Body
+```json
+{
+  "mobile": "9999988888",
+  "delivery_address": "New updated address"
+}
+```
+
+### ✅ Success Response
+```json
+{
+  "message": "Customer updated successfully"
+}
+```
+
+---
+
+## 📦 5. `GET /api/customers/export`
+
+### 🧾 Download all customers as `.csv` file (Admin only)
+
+- Will trigger a **file download** in browser.
+- File will be named `customers.csv`.
+
+### 📌 Example
+```
+GET /api/customers/export
+```
+
+> ⚠️ This route uses `res.attachment()` and `res.send()` so the browser auto-downloads the CSV. No manual download logic is needed from frontend.
+
+---
+
+## 🧠 Notes for Frontend Devs
+
+- All routes (except `/`) require authentication via bearer token.
+- `export` route can be triggered via a simple `window.open()` or `<a href>` tag in React.
+- Form data must be sent as `application/json`.
+- No pagination yet — entire dataset is returned.
+
+ Upload Routes (uploadRoutes.js):
+
+✅ POST /api/upload/image - Upload single image
+✅ POST /api/upload/images - Upload multiple images
+✅ DELETE /api/upload/image - Delete image
+
+Input name attribute must have "image" as values
+
+first upload the file then it will return a json response {
+    "success": true,
+    "message": "Image uploaded successfully",
+    "data": {
+        "imageUrls": {
+            "original": "https://res.cloudinary.com/dcncbnied/image/upload/v1753457480/uploads/upload-1753457469861-717003616_hjmuwk.jpg",
+            "large": "https://res.cloudinary.com/dcncbnied/image/upload/c_fill,f_auto,h_600,q_auto,w_800/v1/uploads/upload-1753457469861-717003616_hjmuwk?_a=BAMAK+a60",
+            "medium": "https://res.cloudinary.com/dcncbnied/image/upload/c_fill,f_auto,h_300,q_auto,w_400/v1/uploads/upload-1753457469861-717003616_hjmuwk?_a=BAMAK+a60",
+            "small": "https://res.cloudinary.com/dcncbnied/image/upload/c_fill,f_auto,h_150,q_auto,w_200/v1/uploads/upload-1753457469861-717003616_hjmuwk?_a=BAMAK+a60",
+            "thumbnail": "https://res.cloudinary.com/dcncbnied/image/upload/c_fill,f_auto,h_100,q_auto,w_100/v1/uploads/upload-1753457469861-717003616_hjmuwk?_a=BAMAK+a60"
+        },
+        "publicId": "uploads/upload-1753457469861-717003616_hjmuwk",
+        "originalFilename": "pexels-pixabay-39517.jpg",
+        "fileSize": 369400,
+        "uploadedAt": "2025-07-25T15:31:21.097Z",
+        "folder": "uploads"
+    }
+}
+
+then extract this values from response and add this to create object and then send api of create object 

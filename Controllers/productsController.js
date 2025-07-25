@@ -1,6 +1,6 @@
 // controllers/productsController.js
 const ProductsModel = require("../Models/productsModel");
-
+const { getFilteredProducts } = require("../Models/productsModel");
 class ProductsController {
   // GET /api/products - Get all products with optional pagination and filters
   static async getAllProducts(req, res) {
@@ -56,6 +56,27 @@ class ProductsController {
         message: "Failed to retrieve products",
         error: error.message,
       });
+    }
+  }
+
+  static async handleProductSearch(req, res) {
+    try {
+      const { search, categories } = req.query;
+
+      // Parse category filters: expected as comma-separated string
+      let parsedCategories = [];
+      if (categories) {
+        parsedCategories = categories
+          .split(",")
+          .map((c) => c.trim())
+          .filter((c) => c);
+      }
+
+      const products = await getFilteredProducts(search, parsedCategories);
+      res.status(200).json(products);
+    } catch (err) {
+      console.error("❌ Error in product search:", err.message);
+      res.status(500).json({ error: "Internal server error" });
     }
   }
 

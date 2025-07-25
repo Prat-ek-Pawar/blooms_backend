@@ -1,4 +1,4 @@
-// models/featuredModel.js
+//models/featuredModel.js
 const pool = require("../Config/DBConfig");
 
 class FeaturedModel {
@@ -52,11 +52,11 @@ class FeaturedModel {
   static async createFeatured(featuredData) {
     try {
       const { category, image, show = true } = featuredData;
-      const query = `
-                INSERT INTO featured (category, image, show)
+      const query =
+                `INSERT INTO featured (category, image, show)
                 VALUES ($1, $2, $3)
-                RETURNING *
-            `;
+                RETURNING *`
+            ;
       const result = await pool.query(query, [category, image, show]);
       return result.rows[0];
     } catch (error) {
@@ -68,12 +68,12 @@ class FeaturedModel {
   static async updateFeatured(id, featuredData) {
     try {
       const { category, image, show } = featuredData;
-      const query = `
-                UPDATE featured
+      const query =
+                `UPDATE featured
                 SET category = $1, image = $2, show = $3, updated = CURRENT_TIMESTAMP
                 WHERE id = $4
-                RETURNING *
-            `;
+                RETURNING *`
+            ;
       const result = await pool.query(query, [category, image, show, id]);
       return result.rows[0];
     } catch (error) {
@@ -84,12 +84,12 @@ class FeaturedModel {
   // Toggle show status
   static async toggleShowStatus(id) {
     try {
-      const query = `
-                UPDATE featured
+      const query =
+                `UPDATE featured
                 SET show = NOT show, updated = CURRENT_TIMESTAMP
                 WHERE id = $1
-                RETURNING *
-            `;
+                RETURNING *`
+            ;
       const result = await pool.query(query, [id]);
       return result.rows[0];
     } catch (error) {
