@@ -5,7 +5,7 @@ const pool = require("../Config/DBConfig"); // Add this import
 
 // JWT Secret (in production, use environment variable)
 const JWT_SECRET = "blooms_nursery_admin_secret_key_2024";
-const JWT_EXPIRES_IN = "1h";
+const JWT_EXPIRES_IN = "24h";
 
 class AdminController {
   // POST /api/admin/login - Admin login
