@@ -87,13 +87,13 @@ class AdminController {
       if (!admin) {
         return res.status(401).json({
           success: false,
-          message: "Admin not found or inactive",
+          message: "Admin not found or inactive ",
         });
       }
 
       res.status(200).json({
         success: true,
-        message: "Token is valid",
+        message: "Authenticated Successfully :)",
         data: {
           admin: {
             id: admin.id,
@@ -109,20 +109,20 @@ class AdminController {
       if (error.name === "JsonWebTokenError") {
         return res.status(401).json({
           success: false,
-          message: "Invalid token",
+          message: "Authentication Failed Relogin⁐",
         });
       }
 
       if (error.name === "TokenExpiredError") {
         return res.status(401).json({
           success: false,
-          message: "Token expired",
+          message: "Session Ended Please Relogin🤗It's for your security only",
         });
       }
 
       res.status(500).json({
         success: false,
-        message: "Token verification failed",
+        message: "Verification Failed Please Try Again🔄️",
         error: error.message,
       });
     }

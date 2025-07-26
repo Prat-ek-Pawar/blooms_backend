@@ -89,10 +89,10 @@ class ProductsModel {
   static async getProductsByPriceRange(minPrice, maxPrice) {
     try {
       const query = `
-                SELECT * FROM products
-                WHERE price BETWEEN $1 AND $2 AND available = true
-                ORDER BY price ASC
-            `;
+        SELECT * FROM products
+        WHERE price BETWEEN $1 AND $2 AND available = true
+        ORDER BY price ASC
+      `;
       const result = await pool.query(query, [minPrice, maxPrice]);
       return result.rows;
     } catch (error) {
@@ -104,10 +104,10 @@ class ProductsModel {
   static async getProductsByRating(minRating) {
     try {
       const query = `
-                SELECT * FROM products
-                WHERE rating >= $1 AND available = true
-                ORDER BY rating DESC
-            `;
+        SELECT * FROM products
+        WHERE rating >= $1 AND available = true
+        ORDER BY rating DESC
+      `;
       const result = await pool.query(query, [minRating]);
       return result.rows;
     } catch (error) {
@@ -119,10 +119,10 @@ class ProductsModel {
   static async searchProducts(searchTerm) {
     try {
       const query = `
-                SELECT * FROM products
-                WHERE product_name ILIKE $1
-                ORDER BY product_name
-            `;
+        SELECT * FROM products
+        WHERE product_name ILIKE $1
+        ORDER BY product_name
+      `;
       const result = await pool.query(query, [`%${searchTerm}%`]);
       return result.rows;
     } catch (error) {
@@ -134,11 +134,11 @@ class ProductsModel {
   static async getFeaturedProducts(limit = 10) {
     try {
       const query = `
-                SELECT * FROM products
-                WHERE available = true AND stock > 0 AND rating >= 4.0 AND reviews >= 10
-                ORDER BY rating DESC, reviews DESC
-                LIMIT $1
-            `;
+        SELECT * FROM products
+        WHERE available = true AND stock > 0 AND rating >= 4.0 AND reviews >= 10
+        ORDER BY rating DESC, reviews DESC
+        LIMIT $1
+      `;
       const result = await pool.query(query, [limit]);
       return result.rows;
     } catch (error) {
@@ -146,7 +146,7 @@ class ProductsModel {
     }
   }
 
-  // Create new product
+  // Create new product - UPDATED FOR IMAGES ARRAY
   static async createProduct(productData) {
     try {
       const {
@@ -155,33 +155,40 @@ class ProductsModel {
         stock = 0,
         price,
         available = true,
-        image,
+        images, // ← UPDATED: Now expects array of images
         rating = 0.0,
         reviews = 0,
       } = productData;
 
+      // Validate that images is an array
+      if (!Array.isArray(images) || images.length === 0) {
+        throw new Error("Images must be a non-empty array");
+      }
+
       const query = `
-                INSERT INTO products (category, product_name, stock, price, available, image, rating, reviews)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-                RETURNING *
-            `;
+        INSERT INTO products (category, product_name, stock, price, available, images, rating, reviews)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING *
+      `;
+
       const result = await pool.query(query, [
         category,
         product_name,
         stock,
         price,
         available,
-        image,
+        images, // PostgreSQL will handle the array
         rating,
         reviews,
       ]);
+
       return result.rows[0];
     } catch (error) {
       throw error;
     }
   }
 
-  // Update product
+  // Update product - UPDATED FOR IMAGES ARRAY
   static async updateProduct(id, productData) {
     try {
       const {
@@ -190,30 +197,122 @@ class ProductsModel {
         stock,
         price,
         available,
-        image,
+        images, // ← UPDATED: Now expects array of images
         rating,
         reviews,
       } = productData;
+
+      // Validate that images is an array if provided
+      if (images && (!Array.isArray(images) || images.length === 0)) {
+        throw new Error("Images must be a non-empty array");
+      }
+
       const query = `
-                UPDATE products
-                SET category = $1, product_name = $2, stock = $3, price = $4,
-                    available = $5, image = $6, rating = $7, reviews = $8,
-                    updated = CURRENT_TIMESTAMP
-                WHERE id = $9
-                RETURNING *
-            `;
+        UPDATE products
+        SET category = $1, product_name = $2, stock = $3, price = $4,
+            available = $5, images = $6, rating = $7, reviews = $8,
+            updated = CURRENT_TIMESTAMP
+        WHERE id = $9
+        RETURNING *
+      `;
+
       const result = await pool.query(query, [
         category,
         product_name,
         stock,
         price,
         available,
-        image,
+        images, // PostgreSQL will handle the array
         rating,
         reviews,
         id,
       ]);
+
       return result.rows[0];
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Add image to existing product
+  static async addImageToProduct(id, newImageUrl) {
+    try {
+      const query = `
+        UPDATE products
+        SET images = array_append(images, $1), updated = CURRENT_TIMESTAMP
+        WHERE id = $2
+        RETURNING *
+      `;
+      const result = await pool.query(query, [newImageUrl, id]);
+      return result.rows[0];
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Remove image from product
+  static async removeImageFromProduct(id, imageUrlToRemove) {
+    try {
+      const query = `
+        UPDATE products
+        SET images = array_remove(images, $1), updated = CURRENT_TIMESTAMP
+        WHERE id = $2
+        RETURNING *
+      `;
+      const result = await pool.query(query, [imageUrlToRemove, id]);
+      return result.rows[0];
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Replace all images for a product
+  static async replaceProductImages(id, newImages) {
+    try {
+      // Validate that images is an array
+      if (!Array.isArray(newImages) || newImages.length === 0) {
+        throw new Error("Images must be a non-empty array");
+      }
+
+      const query = `
+        UPDATE products
+        SET images = $1, updated = CURRENT_TIMESTAMP
+        WHERE id = $2
+        RETURNING *
+      `;
+      const result = await pool.query(query, [newImages, id]);
+      return result.rows[0];
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Get primary image (first image in array)
+  static async getPrimaryImage(id) {
+    try {
+      const query = `
+        SELECT images[1] as primary_image
+        FROM products
+        WHERE id = $1
+      `;
+      const result = await pool.query(query, [id]);
+      return result.rows[0]?.primary_image;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Search products by image count
+  static async getProductsByImageCount(minImages = 1) {
+    try {
+      const query = `
+        SELECT *, array_length(images, 1) as image_count
+        FROM products
+        WHERE array_length(images, 1) >= $1
+        ORDER BY image_count DESC
+      `;
+      const result = await pool.query(query, [minImages]);
+      return result.rows;
     } catch (error) {
       throw error;
     }
@@ -223,11 +322,11 @@ class ProductsModel {
   static async updateStock(id, newStock) {
     try {
       const query = `
-                UPDATE products
-                SET stock = $1, updated = CURRENT_TIMESTAMP
-                WHERE id = $2
-                RETURNING *
-            `;
+        UPDATE products
+        SET stock = $1, updated = CURRENT_TIMESTAMP
+        WHERE id = $2
+        RETURNING *
+      `;
       const result = await pool.query(query, [newStock, id]);
       return result.rows[0];
     } catch (error) {
@@ -239,11 +338,11 @@ class ProductsModel {
   static async updatePrice(id, newPrice) {
     try {
       const query = `
-                UPDATE products
-                SET price = $1, updated = CURRENT_TIMESTAMP
-                WHERE id = $2
-                RETURNING *
-            `;
+        UPDATE products
+        SET price = $1, updated = CURRENT_TIMESTAMP
+        WHERE id = $2
+        RETURNING *
+      `;
       const result = await pool.query(query, [newPrice, id]);
       return result.rows[0];
     } catch (error) {
@@ -255,11 +354,11 @@ class ProductsModel {
   static async updateRating(id, rating, reviews) {
     try {
       const query = `
-                UPDATE products
-                SET rating = $1, reviews = $2, updated = CURRENT_TIMESTAMP
-                WHERE id = $3
-                RETURNING *
-            `;
+        UPDATE products
+        SET rating = $1, reviews = $2, updated = CURRENT_TIMESTAMP
+        WHERE id = $3
+        RETURNING *
+      `;
       const result = await pool.query(query, [rating, reviews, id]);
       return result.rows[0];
     } catch (error) {
@@ -271,11 +370,11 @@ class ProductsModel {
   static async toggleAvailability(id) {
     try {
       const query = `
-                UPDATE products
-                SET available = NOT available, updated = CURRENT_TIMESTAMP
-                WHERE id = $1
-                RETURNING *
-            `;
+        UPDATE products
+        SET available = NOT available, updated = CURRENT_TIMESTAMP
+        WHERE id = $1
+        RETURNING *
+      `;
       const result = await pool.query(query, [id]);
       return result.rows[0];
     } catch (error) {
@@ -310,10 +409,10 @@ class ProductsModel {
   static async getLowStockProducts(threshold = 5) {
     try {
       const query = `
-                SELECT * FROM products
-                WHERE stock <= $1 AND available = true
-                ORDER BY stock ASC
-            `;
+        SELECT * FROM products
+        WHERE stock <= $1 AND available = true
+        ORDER BY stock ASC
+      `;
       const result = await pool.query(query, [threshold]);
       return result.rows;
     } catch (error) {
@@ -376,11 +475,11 @@ class ProductsModel {
       params.push(offset);
 
       const dataQuery = `
-                SELECT * FROM products
-                ${whereClause}
-                ORDER BY created DESC
-                LIMIT $${paramCount - 1} OFFSET $${paramCount}
-            `;
+        SELECT * FROM products
+        ${whereClause}
+        ORDER BY created DESC
+        LIMIT $${paramCount - 1} OFFSET $${paramCount}
+      `;
       const dataResult = await pool.query(dataQuery, params);
 
       return {
@@ -394,6 +493,71 @@ class ProductsModel {
           hasPrev: page > 1,
         },
       };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Bulk update product images
+  static async bulkUpdateProductImages(updates) {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      const results = [];
+      for (const update of updates) {
+        const { id, images } = update;
+        const query = `
+          UPDATE products
+          SET images = $1, updated = CURRENT_TIMESTAMP
+          WHERE id = $2
+          RETURNING *
+        `;
+        const result = await client.query(query, [images, id]);
+        results.push(result.rows[0]);
+      }
+
+      await client.query("COMMIT");
+      return results;
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  // Get products with specific image in their array
+  static async getProductsWithImage(imageUrl) {
+    try {
+      const query = `
+        SELECT * FROM products
+        WHERE $1 = ANY(images)
+        ORDER BY created DESC
+      `;
+      const result = await pool.query(query, [imageUrl]);
+      return result.rows;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Get statistics about images
+  static async getImageStatistics() {
+    try {
+      const query = `
+        SELECT
+          COUNT(*) as total_products,
+          AVG(array_length(images, 1)) as avg_images_per_product,
+          MIN(array_length(images, 1)) as min_images,
+          MAX(array_length(images, 1)) as max_images,
+          COUNT(*) FILTER (WHERE array_length(images, 1) = 1) as single_image_products,
+          COUNT(*) FILTER (WHERE array_length(images, 1) > 1) as multiple_image_products
+        FROM products
+        WHERE images IS NOT NULL
+      `;
+      const result = await pool.query(query);
+      return result.rows[0];
     } catch (error) {
       throw error;
     }
